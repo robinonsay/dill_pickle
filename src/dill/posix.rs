@@ -1,7 +1,9 @@
-use core::ffi::{c_char, c_void};
-use std::ffi::{CStr, CString};
-use std::mem::transmute_copy;
+use core::ffi::{CStr, c_char, c_void};
+use core::mem::transmute_copy;
 use super::{errors::DillError, loader::Loader};
+
+const MAX_PATH_LEN: usize = 128;
+type CustomCStr = [u8; MAX_PATH_LEN]; 
 
 pub struct PosixLoader {
     handle: *mut c_void
@@ -27,9 +29,8 @@ impl PosixLoader {
     pub fn new(lib: &str) -> Result<Self, super::errors::DillError> {
         unsafe {
             // Convert the &str to a CString
-            let lib_name = CString::new(lib)
-                .map_err(|_| DillError::NullErr(DillError::create_msg("Null error")))?;
-            let handle = dlopen(lib_name.as_ptr(), RTLD_NOW & RTLD_NO_DELETE);
+            let lib_name = PosixLoader::str_to_cstr(lib);
+            let handle = dlopen(lib_name.as_ptr() as *const i8, RTLD_NOW & RTLD_NO_DELETE);
             // Handle error in loading handle
             if handle.is_null() {
                 // Get raw error message pointer
@@ -51,7 +52,12 @@ impl PosixLoader {
             Ok(PosixLoader{handle})
         }
     }
-    
+    fn str_to_cstr(text: &str) -> CustomCStr {
+        let mut buf: CustomCStr = [0; MAX_PATH_LEN];
+        let len = text.len().min(MAX_PATH_LEN - 1);
+        buf[..len].copy_from_slice(&text.as_bytes()[..len]);
+        return buf;
+    }
 }
 
 impl Drop for PosixLoader {
@@ -80,8 +86,7 @@ impl Loader for PosixLoader {
 
     fn load<F>(&self, sym_name: &str) -> Result<F, super::errors::DillError> {
         unsafe {
-            let symbol_name = CString::new(sym_name)
-                .map_err(|_| DillError::NullErr(DillError::create_msg("Null error")))?;
+            let symbol_name = PosixLoader::str_to_cstr(sym_name);
             let raw_symbol = dlsym(self.handle, symbol_name.as_ptr() as *const i8);
             // Handle error in loading handle
             if raw_symbol.is_null() {
