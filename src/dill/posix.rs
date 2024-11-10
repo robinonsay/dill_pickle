@@ -3,7 +3,7 @@ use core::mem::transmute_copy;
 use super::{errors::DillError, loader::Loader};
 
 const MAX_PATH_LEN: usize = 128;
-type CustomCStr = [u8; MAX_PATH_LEN]; 
+type CStyleStr = [u8; MAX_PATH_LEN]; 
 
 pub struct PosixLoader {
     handle: *mut c_void
@@ -52,8 +52,8 @@ impl PosixLoader {
             Ok(PosixLoader{handle})
         }
     }
-    fn str_to_cstr(text: &str) -> CustomCStr {
-        let mut buf: CustomCStr = [0; MAX_PATH_LEN];
+    fn str_to_cstr(text: &str) -> CStyleStr {
+        let mut buf: CStyleStr = [0; MAX_PATH_LEN];
         let len = text.len().min(MAX_PATH_LEN - 1);
         buf[..len].copy_from_slice(&text.as_bytes()[..len]);
         return buf;
