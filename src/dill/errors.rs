@@ -1,4 +1,4 @@
-use std::fmt;
+use core::fmt;
 
 const ERROR_MSG_LEN: usize = 256;
 
