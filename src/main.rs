@@ -1,5 +1,5 @@
 use core::ffi::{CStr, c_char};
-use dill_pickle::dill::{loader::Loader, posix::PosixLoader};
+use dill_pickle::{loader::Loader, posix::PosixLoader};
 
 type MyFunc = extern "C" fn() -> *const c_char;
 
